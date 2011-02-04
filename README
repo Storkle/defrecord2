@@ -28,5 +28,29 @@ or, if you use the first one
 TO PRINT-DUP
 
 (binding [*print-dup* true] (print-str record))
-This can be saved to a file, see
-http://groups.google.com/group/clojure/browse_thread/thread/953bd60ec64166c5
+
+This can be saved to a file, using something like this:
+
+;;used from http://groups.google.com/group/clojure/browse_thread/thread/cb5246d07... 
+(defn frm-save 
+ "Save a clojure form to file." 
+  [file form] 
+  (with-open [w (java.io.FileWriter. 
+                 (if (instance? File file) file (File. file)))] 
+    (binding [*out* w *print-dup* true] (prn form)))) 
+(defn frm-load 
+  "Load a clojure form from file." 
+  [file] 
+  (with-open [r (java.io.PushbackReader. 
+     (java.io.FileReader. (if (instance? File file) file (File. 
+file))))] 
+     (let [rec (read r)] 
+       rec)))
+
+and atoms and refs can be included by defining these functions:
+
+(defmethod print-dup clojure.lang.Atom [o w]
+  (.write w "#=(clojure.core/atom ") (print-dup @o w) (.write w ")"))
+(defmethod print-dup clojure.lang.Ref [o w]
+  (.write w "#=(clojure.core/ref ") (print-dup @o w) (.write w ")"))
+
