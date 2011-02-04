@@ -1,6 +1,12 @@
-(ns defrecord2
+;;BY David McNeil
+;;https://github.com/david-mcneil/defrecord2
+;;modified defrecord2 macro so i could include protocols
+;;got rid of print-method method
+
+(ns defrecord2 
   (:require [clojure.contrib.str-utils2 :as str2])
-  (:use [clojure.set :only (difference)]
+  (:use [clojure.contrib.core :only (seqable?)]
+        [clojure.set :only (difference)]
         [clojure.string :only (join)]
         [clojure.contrib.pprint :only (*simple-dispatch* use-method pprint-map)])
   (:import [clojure.lang IPersistentList IPersistentVector IPersistentMap ISeq]))
@@ -77,11 +83,16 @@
                                             (not (nil? v)))
                                       [k v]))))))
 
+(defn ns-resolve-symbol [s]
+  (if-let [s (resolve s)]
+    (.substring (str s) 2)
+    (str s)))
+
 (defmacro print-record
   "Low-level function to print a record to a stream using the specified constructor name in the print output and using the provided write-contents function to write out the contents of the record (represented as a map)."
   [ctor ctor-name native-keys record stream write-contents]
-  `(do
-     (.write ~stream (str "(" ~ctor-name " "))
+  `(do 
+     (.write ~stream (str "#=(" ~(ns-resolve-symbol ctor-name) " "))
      (~write-contents (remove-nil-native-fields ~native-keys ~record))
      (.write ~stream  ")")))
 
@@ -98,8 +109,8 @@
   "Define the print methods to print a record nicely (so that records will print in a form that can be evaluated as itself)."
   [ctor ctor-name native-keys type-name]
 
-  `(do (setup-print-record-method ~ctor ~ctor-name ~native-keys ~type-name print-method)
-       (setup-print-record-method ~ctor ~ctor-name ~native-keys ~type-name print-dup)))
+  `(do ;(setup-print-record-method ~ctor ~ctor-name ~native-keys ~type-name print-method)
+     (setup-print-record-method ~ctor ~ctor-name ~native-keys ~type-name print-dup)))
 
 (defn generate-record-pprint
   "Return a function that can be used in the pprint dispatch mechanism to handle a specific constructor name."
@@ -180,28 +191,29 @@
 (defmethod postwalk2 :default [f n]
   (f (walk2 postwalk2 f n)))
 
+
 (defmacro defrecord2
   "Defines a record and sets up constructor functions, printing, and pprinting for the new record type."
-  ([type-name field-list]
-     `(defrecord2 ~type-name ~field-list
-        ;; invoke defrecord2 with default constructor function name
-        ~(symbol (str "new-" (camel-to-dashed (str type-name))))))
-  ([type-name field-list ctor-name]
-     `(do
-        ;; define the record
-        (defrecord ~type-name ~field-list)
-        ;; define the constructor functions
-        (make-record-constructor ~ctor-name
-                                 ~type-name
-                                 ~field-list
-                                 (~(symbol (str type-name ".")) ~@(repeat (count field-list) nil)))
-        ;; setup tree walking methods
-        (make-prewalk2-method ~ctor-name ~type-name ~field-list)
-        (make-postwalk2-method ~ctor-name ~type-name ~field-list)
+  [type-name field-list & protocols]
+  (let [type-name (if (seqable? type-name) (first type-name) type-name)
+        ctor-name (if (seqable? type-name) (second type-name) (symbol (str "new-" (camel-to-dashed (str type-name)))))] 
+    `(do 
+       ;; define the record
+       (defrecord ~type-name ~field-list ~@protocols)
+       ;; define the constructor functions
+       (make-record-constructor ~ctor-name
+                                ~type-name
+                                ~field-list
+                                (~(symbol (str type-name ".")) ~@(repeat (count field-list) nil)))
+       ;; setup tree walking methods
+       (make-prewalk2-method ~ctor-name ~type-name ~field-list)
+       (make-postwalk2-method ~ctor-name ~type-name ~field-list)
 
-        ;; setup printing
-        (let [empty-record# (~ctor-name {})
-              native-keys# (set (keys empty-record#))]
-          (setup-print-record ~ctor-name (quote ~ctor-name) native-keys# ~type-name)
-          ;; setup pprinting
-          (use-method *simple-dispatch* ~type-name (generate-record-pprint ~ctor-name (quote ~ctor-name) native-keys#))))))
+       ;; setup printing
+       (let [empty-record# (~ctor-name {})
+             native-keys# (set (keys empty-record#))]
+         (setup-print-record ~ctor-name ~ctor-name native-keys# ~type-name)
+         ;; setup pprinting
+         (use-method *simple-dispatch* ~type-name (generate-record-pprint ~ctor-name (quote ~ctor-name) native-keys#))))))
+
+ 
