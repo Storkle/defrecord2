@@ -15,16 +15,16 @@
 
 ;; internal helpers for name conversion
 
-(defn take-even [x]
+(defn- take-even [x]
   (take-nth 2 x))
 
-(defn take-odd [x]
+(defn- take-odd [x]
   (take-nth 2 (drop 1 x)))
 
-(defn is-upper? [s]
+(defn- is-upper? [s]
   (= (.toUpperCase s) s))
 
-(defn assemble-words [parts]
+(defn- assemble-words [parts]
   (loop [remaining-parts parts result []]
     (if (seq remaining-parts)
       (let [part (first remaining-parts)]
@@ -36,7 +36,7 @@
                          []) (str (last result) part)))))
       result)))
 
-(defn camel-to-dashed
+(defn- camel-to-dashed
   "Convert a name like 'BigBlueCar' to 'big-blue-car'."
   [s]
   (let [parts (remove #(= "" %) (str2/partition s #"[A-Z]"))
@@ -72,7 +72,7 @@
                (map? value-map#)
                (expected-keys? value-map# ~(set (map keyword field-list)))]}
         (set-record-fields (if (nil? initial#) ~default-record initial#) value-map#))))
-
+ 
 ;; internal helpers for printing
 
 (defn remove-nil-native-fields [native-keys record]
@@ -83,7 +83,7 @@
                                             (not (nil? v)))
                                       [k v]))))))
 
-(defn ns-resolve-symbol [s]
+(defn- ns-resolve-symbol [s]
   (if-let [s (resolve s)]
     (.substring (str s) 2)
     (str s)))

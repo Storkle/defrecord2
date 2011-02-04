@@ -1,13 +1,14 @@
 (ns test-defrecord2
+  (:require defrecord2)
   (:use [clojure test]
-        [defrecord2 :only (defrecord2 prewalk2 postwalk2 camel-to-dashed)]
+        [defrecord2 :only (defrecord2 prewalk2 postwalk2)]
         [clojure.contrib.pprint :only (pprint)])
   (:import [clojure.lang IPersistentVector]))
  
 ;;
 
 (deftest test-camel-to-dashed
-  (are [expected in] (= expected (camel-to-dashed in))
+  (are [expected in] (= expected (#'defrecord2/camel-to-dashed in))
        "wow" "wow"
        "a" "a"
        "a" "A"
@@ -20,8 +21,8 @@
  
 (defrecord2 (Yo new-yo-yo) [x y])
 (deftest test-custom-constructor-name
-  (is (= "#:test-defrecord2.Yo{:x 2, :y 3}" (print-str (new-yo-yo {:x 2 :y 3})))))
-
+  (is (= "#:test-defrecord2.Yo{:x 2, :y 3}" (print-str (new-yo-yo {:x 2 :y 3})))))  
+    
 (defrecord2 Foo [x y])
 
 (deftest test-printn-dup
