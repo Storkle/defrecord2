@@ -31,7 +31,8 @@ TO PRINT-DUP
 
 This can be saved to a file, using something like this:
 
-;;used from http://groups.google.com/group/clojure/browse_thread/thread/cb5246d07... 
+;;used from
+;;http://groups.google.com/group/clojure/browse_thread/thread/cb5246d07142a3dc?fwc=2&pli=1
 (defn frm-save 
  "Save a clojure form to file." 
   [file form] 
