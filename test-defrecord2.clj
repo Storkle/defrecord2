@@ -3,7 +3,7 @@
         [defrecord2 :only (defrecord2 prewalk2 postwalk2 camel-to-dashed)]
         [clojure.contrib.pprint :only (pprint)])
   (:import [clojure.lang IPersistentVector]))
-
+ 
 ;;
 
 (deftest test-camel-to-dashed
@@ -17,25 +17,29 @@
        "a-x" "aX"))
 
 ;;
-
+ 
 (defrecord2 Foo [x y])
 
+(deftest test-printn-dup
+  (is (= "#=(test-defrecord2/new-foo #=(clojure.lang.PersistentArrayMap/create {:x 2, :y 3}))"
+	 (binding [*print-dup* true] (print-str (new-foo {:x 2 :y 3}))))))
+
 (deftest test-defrecord2
-  (is (= "(new-foo {:x 10})" (print-str (new-foo {:x 10})))))
+  (is (=  "#:test-defrecord2.Foo{:x 10, :y nil}"(print-str (new-foo {:x 10})))))
 
 (deftest test-defrecord2-pprint
-  (is (=
-       "(new-foo {:x 10})\n"
+  (is (= "{:x 10, :y nil}\n"
        (with-out-str (pprint (new-foo {:x 10}))))))
 
 (deftest test-defrecord2-pprint-deep
-  (is (= "(new-foo {:x 10,\n          :y\n          (new-foo {:x 10,\n                    :y\n                    (new-foo {:x 10, :y (new-foo {:x 10, :y 20})})})})\n"
-         (with-out-str (pprint (new-foo {:x 10 :y (new-foo {:x 10 :y (new-foo {:x 10 :y (new-foo {:x 10 :y 20})})})}))))))
-
+  (is (= "{:x 10, :y {:x 10, :y {:x 10, :y {:x 10, :y 20}}}}\n"
+         (with-out-str 
+	   (pprint (new-foo {:x 10 :y (new-foo {:x 10 :y (new-foo {:x 10 :y (new-foo {:x 10 :y 20})})})}))))))
+ 
 (deftest test-defrecord2-dont-skip-extra-nils-but-do-skip-native-nils
-  (is (= "(new-foo {:x 10, :b nil, :a 4})"
+  (is (= "#:test-defrecord2.Foo{:x 10, :y nil, :b nil, :a 4}"
          (print-str (assoc (new-foo {:x 10}) :a 4 :b nil))))
-  (is (= "(new-foo {:x 10, :b nil, :a 4})"
+  (is (= "#:test-defrecord2.Foo{:x 10, :y nil, :b nil, :a 4}"
          (print-str (assoc (new-foo {:x 10 :y nil}) :a 4 :b nil)))))
 
 (deftest test-contructor-wrong-args-first-arg-is-not-a-record
@@ -46,7 +50,7 @@
 
 (deftest test-contructor-wrong-args-only-arg-is-not-a-map
   (is (thrown? AssertionError (new-foo 20))))
-
+ 
 (deftest test-typo-in-field-name
   (is (thrown? AssertionError (new-foo {:a 1})))
   (is (thrown? AssertionError (new-foo {:a 1 :x 10})))
@@ -61,7 +65,7 @@
          (new-f {:a 20}))))
 
 (deftest test-order-of-printed-fields
-  (is (= "(new-f {:z 100, :x 99, :b 2, :a 1})"
+  (is (= "#:test-defrecord2.F{:z 100, :x 99, :b 2, :a 1}"
          (print-str (new-f {:a 1 :b 2 :x 99 :z 100})))))
 
 ;; test tree walking

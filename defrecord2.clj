@@ -1,7 +1,7 @@
 ;;BY David McNeil
 ;;https://github.com/david-mcneil/defrecord2
 ;;modified defrecord2 macro so i could include protocols
-;;got rid of print-method method
+;;got rid of print-method and pprint method 
 
 (ns defrecord2 
   (:require [clojure.contrib.str-utils2 :as str2])
@@ -11,7 +11,7 @@
         [clojure.contrib.pprint :only (*simple-dispatch* use-method pprint-map)])
   (:import [clojure.lang IPersistentList IPersistentVector IPersistentMap ISeq]))
 
-;;;; enhanced records
+;;;; enhanced records with constructor support (take in a hashmap) and print-dup support
 
 ;; internal helpers for name conversion
 
@@ -112,11 +112,11 @@
   `(do ;(setup-print-record-method ~ctor ~ctor-name ~native-keys ~type-name print-method)
      (setup-print-record-method ~ctor ~ctor-name ~native-keys ~type-name print-dup)))
 
-(defn generate-record-pprint
+(defmacro generate-record-pprint
   "Return a function that can be used in the pprint dispatch mechanism to handle a specific constructor name."
   [ctor ctor-name native-keys]
-  (fn [record]
-    (print-record ctor ctor-name native-keys record *out* pprint-map)))
+  `(fn [record#]
+     (print-record ~ctor ~ctor-name ~native-keys record# *out* pprint-map)))
 
 ;; internal helpers - walking data structures
 
@@ -190,13 +190,14 @@
 
 (defmethod postwalk2 :default [f n]
   (f (walk2 postwalk2 f n)))
-
-
+  
 (defmacro defrecord2
   "Defines a record and sets up constructor functions, printing, and pprinting for the new record type."
-  [type-name field-list & protocols]
-  (let [type-name (if (seqable? type-name) (first type-name) type-name)
-        ctor-name (if (seqable? type-name) (second type-name) (symbol (str "new-" (camel-to-dashed (str type-name)))))] 
+  [type field-list & protocols]
+  (let [type-name (if (seqable? type) (first type) type)
+        ctor-name (if (seqable? type)
+		    (second type)
+		    (symbol (str "new-" (camel-to-dashed (str type)))))]
     `(do 
        ;; define the record
        (defrecord ~type-name ~field-list ~@protocols)
@@ -214,6 +215,13 @@
              native-keys# (set (keys empty-record#))]
          (setup-print-record ~ctor-name ~ctor-name native-keys# ~type-name)
          ;; setup pprinting
-         (use-method *simple-dispatch* ~type-name (generate-record-pprint ~ctor-name (quote ~ctor-name) native-keys#))))))
+         (comment
+	   (use-method *simple-dispatch*
+		       ~type-name
+		       
+		       (generate-record-pprint ~ctor-name
+					       ~ctor-name
+					       native-keys#)))))))
+
 
  
