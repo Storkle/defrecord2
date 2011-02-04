@@ -18,6 +18,10 @@
 
 ;;
  
+(defrecord2 (Yo new-yo-yo) [x y])
+(deftest test-custom-constructor-name
+  (is (= "#:test-defrecord2.Yo{:x 2, :y 3}" (print-str (new-yo-yo {:x 2 :y 3})))))
+
 (defrecord2 Foo [x y])
 
 (deftest test-printn-dup
