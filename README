@@ -6,3 +6,9 @@ Enhance clojure records to:
 
 David McNeil
 August 2010
+
+MODIFICATIONS
+
+modified defrecord2 macro so i could include protocols
+got rid of print-method and pprint method
+fixed support for print-dup so it outputs #= and also namespace of constructor
