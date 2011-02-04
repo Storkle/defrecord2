@@ -9,6 +9,24 @@ August 2010
 
 MODIFICATIONS
 
-modified defrecord2 macro so i could include protocols
-got rid of print-method and pprint method
-fixed support for print-dup so it outputs #= and also namespace of constructor
+* modified defrecord2 macro so i could include protocols
+* got rid of print-method and pprint method
+* fixed support for print-dup so it outputs #= and also namespace of constructor
+* changed position of constructor name
+
+USAGE
+
+(defrecord2 name [a b] Protocol1 ...)
+or
+(defrecord2 (name constructor) [a b] Protocol1 ...)
+and you thus create the name record by
+
+(constructor {:a 2 :b 3})
+or, if you use the first one
+(new-name {:a 2 :b 3})
+
+TO PRINT-DUP
+
+(binding [*print-dup* true] (print-str record))
+This can be saved to a file, see
+http://groups.google.com/group/clojure/browse_thread/thread/953bd60ec64166c5
